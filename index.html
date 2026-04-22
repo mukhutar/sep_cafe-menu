@@ -6,7 +6,7 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
 <title>Sep Cafe — POS</title>
-<link rel="shortcut icon" href="/sep_profile.png" type="image/x-icon">
+<link rel="shortcut icon" href="sep_profile.png" type="image/x-icon"/>
 <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
@@ -17,20 +17,18 @@
 <header class="topbar">
   <div class="logo">Sep <span>Cafe</span></div>
 
-  <!-- Desktop tabs -->
   <div class="topbar-tabs">
     <button class="tab active" onclick="switchTab('orders')">New Order</button>
     <button class="tab" onclick="switchTab('stock')">Stock</button>
     <button class="tab" onclick="switchTab('log')">Log</button>
     <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+    <button class="tab" onclick="switchTab('menu-mgmt')">Menu</button>
   </div>
 
-  <!-- Sync badge -->
   <div id="sync-badge" class="sync-badge offline" style="margin-left:8px">
     <span class="sync-dot"></span>Local only
   </div>
 
-  <!-- Mobile cart button -->
   <button class="topbar-cart-btn" onclick="openSheet()" id="cart-btn">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
@@ -48,8 +46,6 @@
 
   <!-- ── ORDER PANEL ── -->
   <div class="panel active" id="orders-panel">
-
-    <!-- Left: menu -->
     <div class="menu-side">
       <div class="menu-controls">
         <div class="search-wrap">
@@ -61,12 +57,8 @@
         </div>
         <div class="cat-scroll" id="cat-tabs"></div>
       </div>
-      <div class="item-scroll">
-        <div class="item-grid" id="item-grid"></div>
-      </div>
+      <div class="item-scroll"><div class="item-grid" id="item-grid"></div></div>
     </div>
-
-    <!-- Right: current order (desktop) -->
     <div class="order-side">
       <div class="order-head">
         <span class="order-title">Current Order</span>
@@ -97,9 +89,7 @@
         Reset Shift
       </button>
     </div>
-    <div class="stock-scroll">
-      <div class="stock-grid" id="stock-grid"></div>
-    </div>
+    <div class="stock-scroll"><div class="stock-grid" id="stock-grid"></div></div>
   </div>
 
   <!-- ── LOG PANEL ── -->
@@ -131,6 +121,38 @@
     </div>
   </div>
 
+  <!-- ── MENU MANAGEMENT PANEL ── -->
+  <div class="panel" id="menu-mgmt-panel">
+    <div class="mgmt-scroll">
+
+      <!-- Toolbar -->
+      <div class="mgmt-toolbar">
+        <div class="mgmt-toolbar-left">
+          <span style="font-family:var(--fd);font-size:18px;color:var(--tp)">Menu Management</span>
+        </div>
+        <div class="mgmt-toolbar-right">
+          <label class="mgmt-toggle-label">
+            <input type="checkbox" id="mgmt-show-inactive" onchange="toggleInactive(this)"/>
+            Show hidden
+          </label>
+          <button class="action-btn green-btn" onclick="openAddItem()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Item
+          </button>
+        </div>
+      </div>
+
+      <!-- Category filter -->
+      <div class="mgmt-filter-row">
+        <div class="cat-scroll" id="mgmt-cat-tabs"></div>
+      </div>
+
+      <!-- Item list -->
+      <div id="mgmt-list"></div>
+
+    </div>
+  </div>
+
 </div><!-- /app-body -->
 
 <!-- ════════════════════════════════
@@ -155,7 +177,7 @@
 </div>
 
 <!-- ════════════════════════════════
-     BOTTOM NAV (mobile)
+     BOTTOM NAV (mobile) — 5 tabs
 ════════════════════════════════ -->
 <nav class="bottom-nav">
   <div class="bottom-nav-inner">
@@ -183,6 +205,12 @@
       </span>
       <span class="bnav-label">Stats</span>
     </button>
+    <button class="bnav-btn" id="bnav-menu-mgmt" onclick="switchTab('menu-mgmt')">
+      <span class="bnav-icon">
+        <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+      </span>
+      <span class="bnav-label">Menu</span>
+    </button>
   </div>
 </nav>
 
@@ -199,42 +227,35 @@
       </div>
     </div>
     <div class="modal-body" id="modal-body"></div>
-    <div id="modal-input-wrap" style="display:none;padding:0 22px">
+    <div id="modal-input-wrap" style="display:none">
       <input class="modal-input" id="modal-input" type="number" min="0"/>
-    </div> <br>
+    </div>
     <div class="modal-footer" id="modal-footer"></div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
-
-<!-- PRINT CONTENT (hidden, shown when printing) -->
 <div id="print-content"></div>
 
 <!-- ════════════════════════════════
-     SCRIPTS (order matters)
+     SCRIPTS
 ════════════════════════════════ -->
 <script src="menu.js"></script>
 <script src="db.js"></script>
 <script src="app.js"></script>
-
 <script>
-// Close modal when clicking the overlay (not the card)
 function handleOverlayClick(e) {
   if (e.target === document.getElementById('modal-overlay')) {
     closeModal();
-    if (_modalResolve) { _modalResolve({ action: 'dismiss', input: null }); _modalResolve = null; }
+    if (_modalResolve) { _modalResolve({ action:'dismiss', input:null }); _modalResolve=null; }
   }
 }
-// ESC key closes modal
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     closeModal();
-    if (_modalResolve) { _modalResolve({ action: 'dismiss', input: null }); _modalResolve = null; }
+    if (_modalResolve) { _modalResolve({ action:'dismiss', input:null }); _modalResolve=null; }
   }
 });
 </script>
-
 </body>
 </html>
